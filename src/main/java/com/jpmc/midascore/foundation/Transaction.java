@@ -7,8 +7,11 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Transaction {
 
+
     private long senderId;
+
     private long recipientId;
+
     private float amount;
 
     public Transaction() {
