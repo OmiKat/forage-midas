@@ -24,11 +24,23 @@ public class TransactionRecord {
     @Column(nullable = false)
     private boolean isvalid;
 
-    public TransactionRecord(float amount, boolean isvalid, UserRecord recipient, UserRecord sender) {
+    @Column(nullable = false)
+    private float incentive;
+
+    public TransactionRecord(float amount, boolean isvalid, UserRecord recipient, UserRecord sender , float incentive) {
         this.amount = amount;
         this.isvalid = isvalid;
         this.recipient = recipient;
         this.sender = sender;
+        this.incentive=incentive;
+    }
+
+    public float getIncentive() {
+        return incentive;
+    }
+
+    public void setIncentive(float incentive) {
+        this.incentive = incentive;
     }
 
     @Override
@@ -41,8 +53,8 @@ public class TransactionRecord {
                 ", isvalid=" + isvalid +
                 '}';
     }
-    public static TransactionRecord fromTransaction(Transaction transaction, UserRecord sender, UserRecord recipient, boolean valid) {
-        return new TransactionRecord(transaction.getAmount() , valid, sender, recipient);
+    public static TransactionRecord fromTransaction(Transaction transaction, UserRecord sender, UserRecord recipient, boolean valid , float incentive) {
+        return new TransactionRecord(transaction.getAmount() , valid, sender, recipient , incentive);
     }
     public TransactionRecord() {
     }

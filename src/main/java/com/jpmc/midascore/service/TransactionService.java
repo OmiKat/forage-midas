@@ -1,5 +1,6 @@
 package com.jpmc.midascore.service;
 
+import com.jpmc.midascore.dto.Incentive;
 import com.jpmc.midascore.entity.TransactionRecord;
 import com.jpmc.midascore.entity.UserRecord;
 import com.jpmc.midascore.foundation.Transaction;
@@ -10,6 +11,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 
 @Service
 public class TransactionService {
@@ -18,11 +21,13 @@ public class TransactionService {
 
     private final UserRepository userRepo;
     private final TransactionRecordRepo transactionRepo;
+    private final RestTemplate restTemplate;
 
     @Autowired
     public TransactionService(UserRepository userRepo, TransactionRecordRepo transactionRepo) {
         this.userRepo = userRepo;
         this.transactionRepo = transactionRepo;
+        this.restTemplate = new RestTemplate();
     }
 
     @Transactional
@@ -44,7 +49,7 @@ public class TransactionService {
             logger.info("Transaction failed : {}" , transaction);
         }
 
-        TransactionRecord record = TransactionRecord.fromTransaction(transaction,sender,recipient,isValid);
+        TransactionRecord record = TransactionRecord.fromTransaction(transaction,sender,recipient,isValid ,getIncentiveFromAPI(transaction));
         transactionRepo.save(record);
         logger.info("Transaction recorded: {}", record);
 
@@ -82,7 +87,26 @@ public class TransactionService {
 
         logger.info("Balances updated - Sender {}: {} -> {}, Recipient {}: {} -> {}",
                 sender.getName(), sender.getBalance() - transaction.getAmount(), newSenderBalance,
-                recipient.getName(), recipient.getBalance() + transaction.getAmount() , newRecipientBalance);
+                recipient.getName(), recipient.getBalance() + transaction.getAmount() , newRecipientBalance
+        );
+
+    }
+    private float getIncentiveFromAPI(Transaction transaction){
+        try {
+            String url = "http://localhost:8080/incentive";
+            Incentive response = restTemplate.postForObject(url,transaction,Incentive.class);
+            if(response != null){
+                logger.info("Incentive response : {}",response);
+                return response.getAmount();
+            }
+            else{
+                logger.warn("No response from Incentive API");
+                return 0.0f;
+            }
+        } catch (RestClientException e) {
+            logger.error("Error calling Incentive API: {}", e.getMessage());
+            return 0.0f;
+        }
 
     }
 
